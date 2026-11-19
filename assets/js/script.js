@@ -321,14 +321,28 @@ function initPortfolioLightbox() {
     const items = document.querySelectorAll('.portfolio-item');
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxVideo = document.getElementById('lightbox-video');
     const lightboxCaption = document.querySelector('.lightbox-caption');
     const lightboxClose = document.querySelector('.lightbox-close');
 
     if (!lightbox) return;
 
-    const openLightbox = (imgSrc, imgAlt, caption) => {
-        lightboxImg.src = imgSrc;
-        lightboxImg.alt = imgAlt;
+    const openLightbox = (src, alt, caption, isVideo = false) => {
+        if (isVideo && lightboxVideo) {
+            lightboxImg.style.display = 'none';
+            lightboxVideo.style.display = 'block';
+            lightboxVideo.src = src;
+            lightboxVideo.play();
+        } else {
+            if (lightboxVideo) {
+                lightboxVideo.pause();
+                lightboxVideo.src = '';
+                lightboxVideo.style.display = 'none';
+            }
+            lightboxImg.style.display = 'block';
+            lightboxImg.src = src;
+            lightboxImg.alt = alt;
+        }
         if (lightboxCaption) lightboxCaption.textContent = caption;
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -336,15 +350,32 @@ function initPortfolioLightbox() {
 
     const closeLightbox = () => {
         lightbox.classList.remove('active');
+        if (lightboxVideo) {
+            lightboxVideo.pause();
+            lightboxVideo.src = '';
+        }
         document.body.style.overflow = '';
     };
 
     items.forEach(item => {
+        const video = item.querySelector('video');
+        if (video) {
+            item.addEventListener('mouseenter', () => video.play().catch(() => {}));
+            item.addEventListener('mouseleave', () => {
+                video.pause();
+                video.currentTime = 0;
+            });
+        }
+
         item.addEventListener('click', () => {
             const img = item.querySelector('img');
             const title = item.querySelector('h3')?.textContent || '';
             const desc = item.querySelector('.portfolio-info p')?.textContent || '';
-            if (img) openLightbox(img.src, img.alt, `${title} - ${desc}`);
+            if (video) {
+                openLightbox(video.getAttribute('src'), video.getAttribute('aria-label') || title, `${title} - ${desc}`, true);
+            } else if (img) {
+                openLightbox(img.src, img.alt, `${title} - ${desc}`, false);
+            }
         });
     });
 
